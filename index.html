@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elevate — Personal Growth Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c0e;
+  --bg2: #141416;
+  --bg3: #1c1c20;
+  --bg4: #242428;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8;
+  --text2: #9b9895;
+  --text3: #5c5a57;
+  --accent: #7fba9e;
+  --accent2: #5a9e7f;
+  --accent-dim: rgba(127,186,158,0.12);
+  --accent-dim2: rgba(127,186,158,0.06);
+  --gold: #c9a86c;
+  --gold-dim: rgba(201,168,108,0.12);
+  --coral: #e07060;
+  --coral-dim: rgba(224,112,96,0.12);
+  --blue: #6a9fd8;
+  --blue-dim: rgba(106,159,216,0.12);
+  --purple: #9b8fd8;
+  --purple-dim: rgba(155,143,216,0.12);
+  --r: 12px;
+  --r2: 18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;overflow:hidden}
+body{display:flex;flex-direction:column}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+
+/* ── Layout ── */
+#app{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex:1;overflow-y:auto;padding:0 0 100px}
+.page.active{display:block}
+
+/* ── Header ── */
+.page-header{padding:32px 20px 20px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
+.page-header h1{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;letter-spacing:-0.5px}
+.page-header p{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* ── Bottom Nav ── */
+#nav{position:fixed;bottom:0;left:0;right:0;background:rgba(12,12,14,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 12px;background:none;border:none;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;cursor:pointer;letter-spacing:0.5px;text-transform:uppercase;transition:color 0.2s}
+.nav-btn svg{width:22px;height:22px;stroke-width:1.5;fill:none;stroke:currentColor;transition:stroke 0.2s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn:active{opacity:0.7}
+
+/* ── Cards ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin:0 16px 12px}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+
+/* ── Section label ── */
+.section-label{font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);padding:20px 20px 10px}
+
+/* ── Stat grid ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;margin-bottom:4px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px}
+.stat-card .label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.stat-card .value{font-family:'DM Serif Display',serif;font-size:30px;font-weight:400;line-height:1}
+.stat-card .sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+/* ── Score ring ── */
+.score-wrap{display:flex;align-items:center;gap:20px;padding:0 16px;margin-bottom:4px}
+.ring-container{position:relative;width:100px;height:100px;flex-shrink:0}
+.ring-container svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--bg4);stroke-width:8}
+.ring-fill{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)}
+.ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-text .num{font-family:'DM Serif Display',serif;font-size:26px;line-height:1}
+.ring-text .lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px}
+.score-info{flex:1}
+.score-info h3{font-size:17px;font-weight:500;margin-bottom:6px}
+.score-info p{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* ── Sliders ── */
+.metric-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.metric-row:last-child{border-bottom:none}
+.metric-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.metric-info{flex:1;min-width:0}
+.metric-info .name{font-size:13px;font-weight:500;margin-bottom:6px}
+.metric-val{font-size:13px;font-weight:600;color:var(--accent);min-width:32px;text-align:right;flex-shrink:0}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--bg4);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg2);box-shadow:0 0 0 1px var(--accent)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:3px solid var(--bg2)}
+
+/* ── Save button ── */
+.btn-primary{width:calc(100% - 32px);margin:16px;padding:16px;background:var(--accent);color:#0c150f;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.2px;transition:all 0.2s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-saved{background:var(--bg3);color:var(--accent);border:1px solid var(--accent)}
+
+/* ── Goals ── */
+.goal-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;margin:0 16px 10px;position:relative;overflow:hidden}
+.goal-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.goal-fitness::before{background:var(--accent)}
+.goal-mindset::before{background:var(--purple)}
+.goal-skills::before{background:var(--blue)}
+.goal-finance::before{background:var(--gold)}
+.goal-habits::before{background:var(--coral)}
+.goal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.goal-name{font-size:15px;font-weight:500;line-height:1.3}
+.goal-cat{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;padding:3px 8px;border-radius:20px;font-weight:600;margin-top:2px;display:inline-block}
+.cat-fitness{background:var(--accent-dim);color:var(--accent)}
+.cat-mindset{background:var(--purple-dim);color:var(--purple)}
+.cat-skills{background:var(--blue-dim);color:var(--blue)}
+.cat-finance{background:var(--gold-dim);color:var(--gold)}
+.cat-habits{background:var(--coral-dim);color:var(--coral)}
+.goal-progress{margin-top:4px}
+.progress-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:8px 0 6px}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+.progress-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text2)}
+.goal-actions{display:flex;gap:8px;margin-top:12px}
+.goal-actions input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none}
+.goal-actions input:focus{border-color:var(--accent)}
+.btn-sm{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.btn-sm:hover{background:var(--bg4)}
+.btn-sm.accent{background:var(--accent-dim);color:var(--accent);border-color:transparent}
+.btn-sm.danger{background:var(--coral-dim);color:var(--coral);border-color:transparent}
+.btn-sm:active{transform:scale(0.96)}
+.pct{font-family:'DM Serif Display',serif;font-size:22px;color:var(--accent)}
+
+/* ── Add form ── */
+.add-form{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin:0 16px 12px}
+.add-form h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.6px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select.form-input option{background:var(--bg3)}
+
+/* ── Todos ── */
+.todo-item{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);transition:opacity 0.3s}
+.todo-item:last-child{border-bottom:none}
+.todo-item.done{opacity:0.4}
+.todo-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;margin-top:1px}
+.todo-check.checked{background:var(--accent);border-color:var(--accent)}
+.todo-check.checked::after{content:'';width:6px;height:6px;background:#0c150f;border-radius:50%;display:block}
+.todo-body{flex:1;min-width:0}
+.todo-name{font-size:14px;line-height:1.4}
+.todo-item.done .todo-name{text-decoration:line-through;color:var(--text3)}
+.priority-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.p-high{background:var(--coral)}
+.p-med{background:var(--gold)}
+.p-low{background:var(--accent)}
+.todo-priority{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:3px}
+.todo-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:18px;line-height:1;flex-shrink:0;transition:color 0.2s}
+.todo-del:hover{color:var(--coral)}
+.todos-container{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin:0 16px 12px;overflow:hidden}
+
+/* ── Insights ── */
+.insight-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin:0 16px 12px;position:relative;overflow:hidden}
+.insight-card .ico{font-size:28px;margin-bottom:12px}
+.insight-card h3{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;margin-bottom:8px}
+.insight-card p{font-size:14px;color:var(--text2);line-height:1.7}
+.tip-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+.tip-item:last-child{border-bottom:none}
+.tip-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px}
+.tip-text{font-size:14px;color:var(--text2);line-height:1.6}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.day-dot{height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);font-weight:500}
+.day-label{font-size:9px;color:var(--text3);text-align:center;margin-top:3px;text-transform:uppercase;letter-spacing:0.3px}
+
+/* ── Habits ── */
+.habit-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.habit-item:last-child{border-bottom:none}
+.habit-ring{width:44px;height:44px;flex-shrink:0}
+.habit-ring svg{transform:rotate(-90deg)}
+.habit-info{flex:1}
+.habit-name{font-size:14px;font-weight:500;margin-bottom:2px}
+.habit-streak{font-size:12px;color:var(--text2)}
+.habit-check{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border2);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s}
+.habit-check.done{background:var(--accent);border-color:var(--accent);color:#0c150f}
+.habit-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px}
+.habit-del:hover{color:var(--coral)}
+
+/* ── Journal ── */
+.journal-entry{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin:0 16px 10px}
+.journal-date{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+.journal-text{font-size:14px;color:var(--text2);line-height:1.7}
+textarea.form-input{resize:none;min-height:100px;line-height:1.6}
+
+/* ── Streak banner ── */
+.streak-banner{background:linear-gradient(135deg,rgba(127,186,158,0.15),rgba(127,186,158,0.05));border:1px solid rgba(127,186,158,0.2);border-radius:var(--r2);padding:18px 20px;margin:16px 16px 0;display:flex;align-items:center;gap:16px}
+.streak-fire{font-size:36px;line-height:1}
+.streak-info h2{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400}
+.streak-info p{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty .ico{font-size:40px;margin-bottom:12px}
+.empty p{font-size:14px;line-height:1.6}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#0c150f;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:200;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══════════════════════════════════ DASHBOARD ══════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <h1 id="dash-greeting">Good morning</h1>
+    <p id="dash-date"></p>
+  </div>
+  <div style="padding:16px 0 0" id="streak-wrap"></div>
+  <div class="section-label">Today's health score</div>
+  <div class="score-wrap">
+    <div class="ring-container">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle class="ring-bg" cx="50" cy="50" r="42"/>
+        <circle class="ring-fill" id="score-ring" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="264"/>
+      </svg>
+      <div class="ring-text"><span class="num" id="score-num">—</span><span class="lbl">Score</span></div>
+    </div>
+    <div class="score-info">
+      <h3 id="score-title">Log your day</h3>
+      <p id="score-desc">Head to Health to track today's metrics and see your score.</p>
+    </div>
+  </div>
+  <div class="section-label">This week</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="label">Goals active</div><div class="value" id="d-goals">0</div><div class="sub">being tracked</div></div>
+    <div class="stat-card"><div class="label">Tasks done</div><div class="value" id="d-tasks">0</div><div class="sub">today</div></div>
+    <div class="stat-card"><div class="label">Habits</div><div class="value" id="d-habits">0</div><div class="sub">done today</div></div>
+    <div class="stat-card"><div class="label">Journal</div><div class="value" id="d-journal">0</div><div class="sub">entries</div></div>
+  </div>
+  <div class="section-label">7-day health</div>
+  <div class="card" style="padding:16px 18px">
+    <div class="week-grid" id="week-grid"></div>
+    <div class="week-grid" id="week-labels" style="margin-top:0"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ HEALTH ══════════════════════════════════ -->
+<div class="page" id="page-health">
+  <div class="page-header">
+    <h1>Health</h1>
+    <p>Log today's metrics</p>
+  </div>
+  <div class="section-label">Daily check-in</div>
+  <div class="card">
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(106,159,216,0.12);font-size:18px">😴</div>
+      <div class="metric-info">
+        <div class="name">Sleep</div>
+        <input type="range" min="0" max="12" step="0.5" value="7" id="m-sleep" oninput="syncM(this,'v-sleep',1)">
+      </div>
+      <div class="metric-val" id="v-sleep">7h</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(127,186,158,0.12);font-size:18px">💧</div>
+      <div class="metric-info">
+        <div class="name">Water</div>
+        <input type="range" min="0" max="16" step="1" value="6" id="m-water" oninput="syncM(this,'v-water',0)">
+      </div>
+      <div class="metric-val" id="v-water">6 gl</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(201,168,108,0.12);font-size:18px">🏃</div>
+      <div class="metric-info">
+        <div class="name">Exercise</div>
+        <input type="range" min="0" max="120" step="5" value="30" id="m-exercise" oninput="syncM(this,'v-exercise',2)">
+      </div>
+      <div class="metric-val" id="v-exercise">30m</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(224,112,96,0.12);font-size:18px">🧘</div>
+      <div class="metric-info">
+        <div class="name">Stress</div>
+        <input type="range" min="1" max="10" step="1" value="4" id="m-stress" oninput="syncM(this,'v-stress',3)">
+      </div>
+      <div class="metric-val" id="v-stress">4/10</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(155,143,216,0.12);font-size:18px">✨</div>
+      <div class="metric-info">
+        <div class="name">Mood</div>
+        <input type="range" min="1" max="10" step="1" value="7" id="m-mood" oninput="syncM(this,'v-mood',4)">
+      </div>
+      <div class="metric-val" id="v-mood">7/10</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon" style="background:rgba(127,186,158,0.12);font-size:18px">⚡</div>
+      <div class="metric-info">
+        <div class="name">Energy</div>
+        <input type="range" min="1" max="10" step="1" value="6" id="m-energy" oninput="syncM(this,'v-energy',5)">
+      </div>
+      <div class="metric-val" id="v-energy">6/10</div>
+    </div>
+  </div>
+  <button class="btn-primary" id="save-health-btn" onclick="saveHealth()">Save today's check-in</button>
+</div>
+
+<!-- ══════════════════════════════════ GOALS ══════════════════════════════════ -->
+<div class="page" id="page-goals">
+  <div class="page-header">
+    <h1>Goals</h1>
+    <p>Track what you're working toward</p>
+  </div>
+  <div class="section-label">Add a goal</div>
+  <div class="add-form">
+    <div class="form-row">
+      <label>Goal name</label>
+      <input class="form-input" id="g-name" placeholder="e.g. Run a 5K, Read 12 books this year">
+    </div>
+    <div class="form-row form-row-2">
+      <div>
+        <label>Category</label>
+        <select class="form-input" id="g-cat">
+          <option value="fitness">Fitness</option>
+          <option value="mindset">Mindset</option>
+          <option value="skills">Skills</option>
+          <option value="finance">Finance</option>
+          <option value="habits">Habits</option>
+        </select>
+      </div>
+      <div>
+        <label>Unit (optional)</label>
+        <input class="form-input" id="g-unit" placeholder="km, books, $...">
+      </div>
+    </div>
+    <div class="form-row form-row-2">
+      <div>
+        <label>Current value</label>
+        <input class="form-input" id="g-current" type="number" placeholder="0">
+      </div>
+      <div>
+        <label>Target value</label>
+        <input class="form-input" id="g-target" type="number" placeholder="100">
+      </div>
+    </div>
+    <button class="btn-sm accent" onclick="addGoal()" style="width:100%;padding:12px;font-size:14px">Add goal</button>
+  </div>
+  <div class="section-label">Your goals</div>
+  <div id="goals-list"></div>
+</div>
+
+<!-- ══════════════════════════════════ TODOS ══════════════════════════════════ -->
+<div class="page" id="page-todos">
+  <div class="page-header">
+    <h1>To-do</h1>
+    <p>Tasks for today and beyond</p>
+  </div>
+  <div class="section-label">Add a task</div>
+  <div class="add-form">
+    <div class="form-row">
+      <label>Task</label>
+      <input class="form-input" id="t-name" placeholder="What needs to get done?">
+    </div>
+    <div class="form-row form-row-2">
+      <div>
+        <label>Priority</label>
+        <select class="form-input" id="t-priority">
+          <option value="high">High</option>
+          <option value="med">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div>
+        <label>Category</label>
+        <select class="form-input" id="t-cat">
+          <option value="personal">Personal</option>
+          <option value="health">Health</option>
+          <option value="work">Work</option>
+          <option value="learning">Learning</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-sm accent" onclick="addTodo()" style="width:100%;padding:12px;font-size:14px">Add task</button>
+  </div>
+  <div class="section-label">Tasks</div>
+  <div class="todos-container" id="todos-list"></div>
+</div>
+
+<!-- ══════════════════════════════════ MORE ══════════════════════════════════ -->
+<div class="page" id="page-more">
+  <div class="page-header">
+    <h1>More</h1>
+    <p>Habits, journal & insights</p>
+  </div>
+
+  <div class="section-label">Habits</div>
+  <div class="add-form" style="margin-bottom:0">
+    <div class="form-row form-row-2">
+      <div>
+        <label>Habit name</label>
+        <input class="form-input" id="h-name" placeholder="e.g. Meditate">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn-sm accent" onclick="addHabit()" style="width:100%;padding:10px">Add</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="habits-list" style="margin-top:0;border-top:none;border-top-left-radius:0;border-top-right-radius:0;border-top:none"></div>
+
+  <div class="section-label">Journal</div>
+  <div class="add-form">
+    <div class="form-row">
+      <label>Today's entry</label>
+      <textarea class="form-input" id="j-text" placeholder="How did today go? What are you grateful for? What do you want to improve?"></textarea>
+    </div>
+    <button class="btn-sm accent" onclick="saveJournal()" style="width:100%;padding:12px;font-size:14px">Save entry</button>
+  </div>
+  <div id="journal-list"></div>
+
+  <div class="section-label">Insights</div>
+  <div id="insights-wrap"></div>
+</div>
+
+</div>
+
+<!-- Bottom Nav -->
+<nav id="nav">
+  <button class="nav-btn active" onclick="switchPage('dashboard',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" onclick="switchPage('health',this)">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Health
+  </button>
+  <button class="nav-btn" onclick="switchPage('goals',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+    Goals
+  </button>
+  <button class="nav-btn" onclick="switchPage('todos',this)">
+    <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Tasks
+  </button>
+  <button class="nav-btn" onclick="switchPage('more',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    More
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+const S = {
+  health: JSON.parse(localStorage.getItem('ev_health') || '{}'),
+  goals:  JSON.parse(localStorage.getItem('ev_goals')  || '[]'),
+  todos:  JSON.parse(localStorage.getItem('ev_todos')  || '[]'),
+  habits: JSON.parse(localStorage.getItem('ev_habits') || '[]'),
+  journal:JSON.parse(localStorage.getItem('ev_journal')|| '[]'),
+};
+
+function save() {
+  localStorage.setItem('ev_health',  JSON.stringify(S.health));
+  localStorage.setItem('ev_goals',   JSON.stringify(S.goals));
+  localStorage.setItem('ev_todos',   JSON.stringify(S.todos));
+  localStorage.setItem('ev_habits',  JSON.stringify(S.habits));
+  localStorage.setItem('ev_journal', JSON.stringify(S.journal));
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────────
+function switchPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'goals') renderGoals();
+  if (name === 'todos') renderTodos();
+  if (name === 'more') { renderHabits(); renderJournal(); renderInsights(); }
+}
+
+// ── Greeting & date ────────────────────────────────────────────────────────────
+function initDash() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('dash-greeting').textContent = g;
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric'});
+}
+
+// ── Health slider sync ─────────────────────────────────────────────────────────
+const mFmt = ['h','gl','m','/10','/10','/10'];
+function syncM(el, vid, type) {
+  const v = parseFloat(el.value);
+  const fmts = ['h','gl','m','/10','/10','/10'];
+  document.getElementById(vid).textContent = v + fmts[type];
+}
+
+function saveHealth() {
+  const today = new Date().toDateString();
+  const entry = {
+    sleep:    parseFloat(document.getElementById('m-sleep').value),
+    water:    parseInt(document.getElementById('m-water').value),
+    exercise: parseInt(document.getElementById('m-exercise').value),
+    stress:   parseInt(document.getElementById('m-stress').value),
+    mood:     parseInt(document.getElementById('m-mood').value),
+    energy:   parseInt(document.getElementById('m-energy').value),
+  };
+  S.health[today] = entry;
+  save();
+  const btn = document.getElementById('save-health-btn');
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('btn-saved');
+  setTimeout(() => { btn.textContent = "Save today's check-in"; btn.classList.remove('btn-saved'); }, 2000);
+  toast('Health logged!');
+  renderDashboard();
+}
+
+function healthScore(e) {
+  if (!e) return null;
+  const s = (Math.min(e.sleep,9)/9)*100;
+  const w = (Math.min(e.water,8)/8)*100;
+  const ex = (Math.min(e.exercise,60)/60)*100;
+  const st = Math.max(0, 100-(e.stress-1)*12.5);
+  const m = ((e.mood-1)/9)*100;
+  const en = ((e.energy-1)/9)*100;
+  return Math.round((s+w+ex+st+m+en)/6);
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const today = new Date().toDateString();
+  const h = S.health[today];
+  const score = healthScore(h);
+
+  // Score ring
+  const ring = document.getElementById('score-ring');
+  const num = document.getElementById('score-num');
+  if (score !== null) {
+    const offset = 264 - (264 * score / 100);
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = score >= 70 ? 'var(--accent)' : score >= 40 ? 'var(--gold)' : 'var(--coral)';
+    num.textContent = score;
+    document.getElementById('score-title').textContent = score >= 70 ? 'Great day!' : score >= 40 ? 'Decent day' : 'Needs work';
+    document.getElementById('score-desc').textContent = score >= 70 ? 'You\'re taking great care of yourself today.' : score >= 40 ? 'A few areas to improve — check the insights.' : 'Focus on sleep, water and movement today.';
+  } else {
+    ring.style.strokeDashoffset = 264;
+    num.textContent = '—';
+  }
+
+  // Stats
+  document.getElementById('d-goals').textContent = S.goals.length;
+  const doneTodos = S.todos.filter(t => t.done).length;
+  document.getElementById('d-tasks').textContent = `${doneTodos}/${S.todos.length}`;
+  const todayStr = new Date().toDateString();
+  const habitsDone = S.habits.filter(h => h.doneToday === todayStr).length;
+  document.getElementById('d-habits').textContent = `${habitsDone}/${S.habits.length}`;
+  document.getElementById('d-journal').textContent = S.journal.length;
+
+  // Streak
+  const streakEl = document.getElementById('streak-wrap');
+  let streak = 0;
+  let d = new Date();
+  for (let i = 0; i < 365; i++) {
+    if (S.health[d.toDateString()]) streak++;
+    else break;
+    d.setDate(d.getDate() - 1);
+  }
+  if (streak > 0) {
+    streakEl.innerHTML = `<div class="streak-banner"><div class="streak-fire">🔥</div><div class="streak-info"><h2>${streak}-day streak</h2><p>Keep logging daily to grow your streak</p></div></div>`;
+  } else {
+    streakEl.innerHTML = '';
+  }
+
+  // Week grid
+  const days = ['S','M','T','W','T','F','S'];
+  let dotHTML = '', labelHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const dd = new Date(); dd.setDate(dd.getDate() - i);
+    const key = dd.toDateString();
+    const sc = healthScore(S.health[key]);
+    const bg = sc === null ? 'var(--bg3)' : sc >= 70 ? 'rgba(127,186,158,0.3)' : sc >= 40 ? 'rgba(201,168,108,0.3)' : 'rgba(224,112,96,0.2)';
+    const txt = sc !== null ? sc : '';
+    dotHTML += `<div class="day-dot" style="background:${bg};color:${sc!==null?'var(--text2)':'var(--text3)'};font-size:11px">${txt}</div>`;
+    labelHTML += `<div class="day-label">${days[dd.getDay()]}</div>`;
+  }
+  document.getElementById('week-grid').innerHTML = dotHTML;
+  document.getElementById('week-labels').innerHTML = labelHTML;
+}
+
+// ── Goals ──────────────────────────────────────────────────────────────────────
+function addGoal() {
+  const name = document.getElementById('g-name').value.trim();
+  if (!name) return;
+  S.goals.push({
+    id: Date.now(),
+    name,
+    cat: document.getElementById('g-cat').value,
+    unit: document.getElementById('g-unit').value.trim(),
+    current: parseFloat(document.getElementById('g-current').value) || 0,
+    target: parseFloat(document.getElementById('g-target').value) || 100,
+  });
+  ['g-name','g-unit','g-current','g-target'].forEach(id => document.getElementById(id).value = '');
+  save(); renderGoals(); toast('Goal added!');
+}
+
+const catColors = {fitness:'var(--accent)',mindset:'var(--purple)',skills:'var(--blue)',finance:'var(--gold)',habits:'var(--coral)'};
+
+function renderGoals() {
+  const el = document.getElementById('goals-list');
+  if (!S.goals.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">🎯</div><p>No goals yet.<br>Add one above to start tracking.</p></div>';
+    return;
+  }
+  el.innerHTML = S.goals.map(g => {
+    const pct = Math.min(100, Math.round((g.current / g.target) * 100));
+    const color = catColors[g.cat] || 'var(--accent)';
+    const unit = g.unit || '';
+    return `<div class="goal-item goal-${g.cat}">
+      <div class="goal-header">
+        <div>
+          <div class="goal-name">${g.name}</div>
+          <span class="goal-cat cat-${g.cat}">${g.cat}</span>
+        </div>
+        <div class="pct">${pct}%</div>
+      </div>
+      <div class="goal-progress">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="progress-meta"><span>${g.current}${unit} done</span><span>${g.target}${unit} goal</span></div>
+      </div>
+      <div class="goal-actions">
+        <input type="number" placeholder="Update progress" id="gupd-${g.id}" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;flex:1">
+        <button class="btn-sm accent" onclick="updateGoal(${g.id})">Update</button>
+        <button class="btn-sm danger" onclick="deleteGoal(${g.id})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateGoal(id) {
+  const g = S.goals.find(g => g.id === id);
+  const inp = document.getElementById(`gupd-${id}`);
+  if (g && inp.value !== '') { g.current = parseFloat(inp.value); save(); renderGoals(); toast('Progress updated!'); }
+}
+function deleteGoal(id) { S.goals = S.goals.filter(g => g.id !== id); save(); renderGoals(); toast('Goal removed'); }
+
+// ── Todos ──────────────────────────────────────────────────────────────────────
+function addTodo() {
+  const name = document.getElementById('t-name').value.trim();
+  if (!name) return;
+  S.todos.unshift({ id: Date.now(), name, priority: document.getElementById('t-priority').value, cat: document.getElementById('t-cat').value, done: false });
+  document.getElementById('t-name').value = '';
+  save(); renderTodos(); toast('Task added!');
+}
+
+const pOrder = {high:0, med:1, low:2};
+const pLabel = {high:'High priority', med:'Medium priority', low:'Low priority'};
+const pDot = {high:'p-high', med:'p-med', low:'p-low'};
+
+function renderTodos() {
+  const el = document.getElementById('todos-list');
+  if (!S.todos.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">✅</div><p>No tasks yet.<br>Add one above.</p></div>';
+    return;
+  }
+  const sorted = [...S.todos].sort((a,b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return pOrder[a.priority] - pOrder[b.priority];
+  });
+  el.innerHTML = sorted.map(t => `
+    <div class="todo-item ${t.done ? 'done' : ''}" id="todo-${t.id}">
+      <div class="todo-check ${t.done ? 'checked' : ''}" onclick="toggleTodo(${t.id})"></div>
+      <div class="todo-body">
+        <div class="todo-name">${t.name}</div>
+        <div class="todo-priority"><span class="priority-dot ${pDot[t.priority]}"></span>${pLabel[t.priority]} · ${t.cat}</div>
+      </div>
+      <button class="todo-del" onclick="deleteTodo(${t.id})">×</button>
+    </div>`).join('');
+}
+
+function toggleTodo(id) { const t = S.todos.find(t => t.id === id); if (t) { t.done = !t.done; save(); renderTodos(); } }
+function deleteTodo(id) { S.todos = S.todos.filter(t => t.id !== id); save(); renderTodos(); toast('Task removed'); }
+
+// ── Habits ─────────────────────────────────────────────────────────────────────
+function addHabit() {
+  const name = document.getElementById('h-name').value.trim();
+  if (!name) return;
+  S.habits.push({ id: Date.now(), name, streak: 0, doneToday: null, history: [] });
+  document.getElementById('h-name').value = '';
+  save(); renderHabits(); toast('Habit added!');
+}
+
+function renderHabits() {
+  const el = document.getElementById('habits-list');
+  if (!S.habits.length) {
+    el.innerHTML = '<div class="empty" style="padding:24px 20px"><div class="ico">🌱</div><p>No habits yet.<br>Add one above.</p></div>';
+    return;
+  }
+  const today = new Date().toDateString();
+  el.innerHTML = S.habits.map(h => {
+    const done = h.doneToday === today;
+    const pct = Math.min(100, (h.streak / 30) * 100);
+    const circ = 2 * Math.PI * 16;
+    const offset = circ - (circ * pct / 100);
+    return `<div class="habit-item">
+      <div class="habit-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="16" fill="none" stroke="var(--bg4)" stroke-width="3"/>
+          <circle cx="22" cy="22" r="16" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+        </svg>
+      </div>
+      <div class="habit-info">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-streak">${h.streak} day streak · ${Math.round(pct)}% to 30-day goal</div>
+      </div>
+      <button class="habit-check ${done ? 'done' : ''}" onclick="toggleHabit(${h.id})">${done ? '✓' : ''}</button>
+      <button class="habit-del" onclick="deleteHabit(${h.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleHabit(id) {
+  const h = S.habits.find(h => h.id === id);
+  if (!h) return;
+  const today = new Date().toDateString();
+  if (h.doneToday === today) {
+    h.doneToday = null; h.streak = Math.max(0, h.streak - 1);
+  } else {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    h.streak = (h.doneToday === yesterday) ? h.streak + 1 : 1;
+    h.doneToday = today;
+  }
+  save(); renderHabits(); renderDashboard();
+}
+function deleteHabit(id) { S.habits = S.habits.filter(h => h.id !== id); save(); renderHabits(); }
+
+// ── Journal ────────────────────────────────────────────────────────────────────
+function saveJournal() {
+  const text = document.getElementById('j-text').value.trim();
+  if (!text) return;
+  S.journal.unshift({ id: Date.now(), text, date: new Date().toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'}) });
+  document.getElementById('j-text').value = '';
+  save(); renderJournal(); toast('Entry saved!');
+}
+
+function renderJournal() {
+  const el = document.getElementById('journal-list');
+  if (!S.journal.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">📓</div><p>No entries yet.<br>Write your first one above.</p></div>';
+    return;
+  }
+  el.innerHTML = S.journal.slice(0, 5).map(j => `
+    <div class="journal-entry">
+      <div class="journal-date">${j.date}</div>
+      <div class="journal-text">${j.text}</div>
+    </div>`).join('');
+}
+
+// ── Insights ───────────────────────────────────────────────────────────────────
+function renderInsights() {
+  const el = document.getElementById('insights-wrap');
+  const last7 = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const e = S.health[d.toDateString()];
+    if (e) last7.push(e);
+  }
+
+  if (!last7.length) {
+    el.innerHTML = '<div class="insight-card"><div class="ico">🔍</div><h3>No data yet</h3><p>Start logging your health daily and your insights will appear here after a few days.</p></div>';
+    return;
+  }
+
+  const avg = f => Math.round(last7.reduce((a,e) => a + f(e), 0) / last7.length * 10) / 10;
+  const avgSleep = avg(e => e.sleep);
+  const avgWater = avg(e => e.water);
+  const avgEx = avg(e => e.exercise);
+  const avgMood = avg(e => e.mood);
+  const avgScore = Math.round(last7.reduce((a,e) => a + (healthScore(e)||0), 0) / last7.length);
+
+  const tips = [];
+  if (avgSleep < 7) tips.push(`You averaged ${avgSleep}h of sleep — aim for 7–9h for optimal recovery and focus.`);
+  else tips.push(`Great sleep average of ${avgSleep}h — your body is getting the rest it needs.`);
+  if (avgWater < 6) tips.push(`You drank about ${avgWater} glasses of water a day — try to reach 8 for better energy and focus.`);
+  if (avgEx < 30) tips.push(`Your average exercise was ${avgEx} min/day — even a 20-minute walk counts and makes a real difference.`);
+  if (avgMood >= 7) tips.push(`Your mood averaged ${avgMood}/10 this week — keep doing what's working!`);
+  const goalPct = S.goals.length ? Math.round(S.goals.reduce((a,g) => a + Math.min(100, g.current/g.target*100), 0) / S.goals.length) : null;
+  if (goalPct !== null) tips.push(`You're ${goalPct}% of the way to your goals on average — consistency is everything.`);
+  const doneTasks = S.todos.filter(t => t.done).length;
+  if (doneTasks > 0) tips.push(`You've completed ${doneTasks} task${doneTasks>1?'s':''} — that's real momentum.`);
+
+  el.innerHTML = `
+    <div class="insight-card" style="background:linear-gradient(135deg,rgba(127,186,158,0.1),rgba(127,186,158,0.03))">
+      <div class="ico">📊</div>
+      <h3>7-day average score: ${avgScore}/100</h3>
+      <p>Based on ${last7.length} logged day${last7.length>1?'s':''} this week</p>
+    </div>
+    <div class="card" style="padding:8px 18px">
+      ${tips.map(t => `<div class="tip-item"><div class="tip-dot"></div><div class="tip-text">${t}</div></div>`).join('')}
+    </div>`;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+initDash();
+renderDashboard();
+</script>
+</body>
+</html>
